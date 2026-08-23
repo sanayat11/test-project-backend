@@ -28,15 +28,22 @@ app.use(
 app.use(express.json());
 
 // Health Check
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get(['/', '/health', '/api/health'], (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'CreatorFlow API', timestamp: new Date().toISOString() });
 });
 
-// API Endpoints
+// API Endpoints (mounted with and without /api prefix for full compatibility)
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
 app.use('/api/reels', reelsRoutes);
+app.use('/reels', reelsRoutes);
+
 app.use('/api/analytics', analyticsRoutes);
+app.use('/analytics', analyticsRoutes);
+
 app.use('/api/profile', profileRoutes);
+app.use('/profile', profileRoutes);
 
 // 404 Handler
 app.use((req, res) => {
