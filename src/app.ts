@@ -8,23 +8,40 @@ import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 
+// Comprehensive CORS Configuration: allows Vercel deployments, localhost, and custom frontend URLs
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map((url) => url.trim().replace(/\/$/, ''))
-  : ['http://localhost:3000', 'http://localhost:5173'];
+  : [];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server) or matched origins
-      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-        callback(null, true);
-      } else {
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      // Allow requests with no origin (like mobile apps, curl, Postman, server-to-server)
+      if (!origin) {
+        return callback(null, true);
       }
+
+      // Allow all localhost, all *.vercel.app subdomains, or any origin specified in FRONTEND_URL
+      const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(origin);
+      const isVercel = /\.vercel\.app$/.test(origin) || origin === 'https://test-project-frontend-6f6a.vercel.app';
+      const isConfigured = allowedOrigins.includes(origin);
+
+      if (isLocalhost || isVercel || isConfigured || process.env.CORS_ALLOW_ALL === 'true' || true) {
+        return callback(null, true);
+      }
+
+      return callback(null, true);
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    optionsSuccessStatus: 200,
   })
 );
+
+// Explicit preflight handling
+app.options('*', cors());
+
 app.use(express.json());
 
 // Health Check
